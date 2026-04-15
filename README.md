@@ -1,1 +1,1 @@
-# AI-Collective-AIC---Team-7
+# AI-Collective-AIC-Team-7
