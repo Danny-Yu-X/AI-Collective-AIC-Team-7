@@ -1,3 +1,4 @@
+#=======================================================================================================================================#
 # Our baseline ML model we will implement is: Logistic Regression Classifier - Danny and Kel
 
 # Overall Plan - Danny and Kel:
@@ -18,16 +19,21 @@
   # Potential Output:
   # Accuracy score
   # Predictions (UP/DOWN)
+  # Visuals of ROC curve and confusion matrix
   # A function we can call later from frontend/backend
-
+#=======================================================================================================================================#
+# Our imports
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-
+from sklearn.metrics import roc_curve, auc, ConfusionMatrixDisplay
+#=======================================================================================================================================#
 
 # -----------------------------
 # 1. LOAD DATASET
@@ -35,7 +41,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 data = pd.read_csv("Amazon_data.csv")
 
 print("Dataset loaded successfully!")
-print(data.head())
+#print(data.head())
 
 
 # -----------------------------
@@ -94,12 +100,11 @@ X_test_scaled = scaler.transform(X_test)
 # 6. TRAIN MODEL - learns patterns from part of the dataset (80%)
 # -----------------------------
 
-# supposedly ML learns better with precentages so i tried converting them with this
-#
-# data['return'] = data['close'].pctchange()
-# data['hig2low change'] = (data['High'] - data['Low']) / data['Open']
-# data['open2close change'] = (data['Close'] - data['Open']) / data['Open']
-# data['volume change'] = data['Volume'].pct_change()
+# supposedly ML learns better with precentages so i tried converting them with this (potential to use):
+  # data['return'] = data['close'].pctchange()
+  # data['hig2low change'] = (data['High'] - data['Low']) / data['Open']
+  # data['open2close change'] = (data['Close'] - data['Open']) / data['Open']
+  # data['volume change'] = data['Volume'].pct_change()
 
 model = LogisticRegression()
 
@@ -128,6 +133,59 @@ print(classification_report(y_test, y_pred))
 print("\nConfusion Matrix:")
 print(confusion_matrix(y_test, y_pred))
 
+# 7B - Visual Outputs - Confusion Matrix and ROC-AUC Curve - Danny
+# Confusion Matrix Heatmap 
+cm = confusion_matrix(y_test, y_pred)
+
+fig_cm, ax_cm = plt.subplots(figsize=(6, 5))
+
+# Color-coded confusion matrix with labeled axes (DOWN/UP)
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt='d',
+    cmap='Blues',
+    xticklabels=['DOWN (0)', 'UP (1)'],
+    yticklabels=['DOWN (0)', 'UP (1)'],
+    ax=ax_cm
+)
+ax_cm.set_title('Confusion Matrix', fontsize=14, fontweight='bold')
+ax_cm.set_xlabel('Predicted Label', fontsize=12)
+ax_cm.set_ylabel('True Label', fontsize=12)
+plt.tight_layout()
+
+# Saves cm as PNG
+fig_cm.savefig("baseModelConfusionMatrix.png", dpi=150)
+plt.show()
+
+# ROC-AUC Curve
+# predict_proba gives probability scores: we use the prob of class 1 (UP)
+  # pulls the probability of UP (class 1), which is what ROC needs
+# dashed diagonal line on the ROC curve represents a random classifier (AUC = 0.5)
+y_prob = model.predict_proba(X_test_scaled)[:, 1]
+
+# Computes FPR/TPR across all thresholds
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+
+# Single AUC score shown in the legend
+roc_auc = auc(fpr, tpr)
+
+fig_roc, ax_roc = plt.subplots(figsize=(7, 5))
+ax_roc.plot(fpr, tpr, color='steelblue', lw=2, label=f'ROC Curve (AUC = {roc_auc:.4f})')
+ax_roc.plot([0, 1], [0, 1], color='gray', lw=1, linestyle='--', label='Random Classifier')
+ax_roc.set_xlim([0.0, 1.0])
+ax_roc.set_ylim([0.0, 1.05])
+ax_roc.set_xlabel('False Positive Rate', fontsize=12)
+ax_roc.set_ylabel('True Positive Rate', fontsize=12)
+ax_roc.set_title('ROC-AUC Curve — Logistic Regression', fontsize=13, fontweight='bold')
+ax_roc.legend(loc='lower right', fontsize=11)
+ax_roc.grid(True, linestyle='--', alpha=0.5)
+plt.tight_layout()
+
+# Save as PNG
+fig_roc.savefig("baseModel_ROC_AUC_Curve.png", dpi=150)
+print(f"\n AUC Score: {roc_auc:.4f}")
+plt.show()
 
 # -----------------------------
 # 8. PREDICTION FUNCTION (FOR FRONTEND) - used on new data (outside dataset)
@@ -166,7 +224,7 @@ result = predict_stock(sample_input)
 
 print("\nSample Prediction:")
 print(result)
-
+#=======================================================================================================================================#
 # Danny and Kel Comments:
   # Our model takes stock features like price and volume, and outputs whether the stock is predicted to go up or down.
   # Internally, it predicts a 0 or 1, which we map to DOWN or UP.
