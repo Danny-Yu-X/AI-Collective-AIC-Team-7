@@ -3,7 +3,7 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, RocCurveDisplay
 
 # Read the file
 data = pd.read_csv("Amazon_data.csv")
@@ -12,36 +12,12 @@ data = data.sort_values("Date")  # sort by Date
 
 data["Target"] = data["Target"].map({1: 1, -1: 0})
 
-'''
-# Gives return percentage
-data["Return"] = data["Close"].pct_change()
-# Calculates mean over 5/10/30 no. of days
-data["MA_5"] = data["Close"].rolling(5).mean()
-data["MA_30"] = data["Close"].rolling(30).mean()
-data["MA_10"] = data["Close"].rolling(10).mean()
-data["MA_90"] = data["Close"].rolling(90).mean()
-data["MA_365"] = data["Close"].rolling(365).mean()
-
-
-
-# Calculates standard deviation to check high/low volatility 
-data["Volatility"] = data["Close"].rolling(5).std()
-
-# Give value to each Postive, negative, neutral and multiply by sentiment score
-data["Sentiment_Signed"] = data["Sentiment"].map({
-    "Positive": 1,
-    "Neutral": 0,
-    "Negative": -1
-}) * data["Sentiment_Score"]
-
-data["Sentiment_Lag1"] = data["Sentiment_Signed"].shift(1)
-'''
 # drop unwanted columns
 
 drop_cols = ["Date", "Company", "Comments", "Cleaned_Text", "Return","Sentiment", "Sentiment_Signed", "Adj Close", "Score","Sentiment_Score"]
 data = data.drop(columns=drop_cols, errors="ignore")
-#data = data.dropna() removes missing data
-features = ['Close', 'High', 'Low', 'Open', 'Volume' ]
+data = data.dropna() #removes missing data
+features = ['Close', 'High', 'Low', 'Open', 'Volume']
 
 X = data[features]
 y = data["Target"]
@@ -62,9 +38,20 @@ print("\nAccuracy:", accuracy_score(y_test, pred))
 print("\nClassification Report:\n", classification_report(y_test, pred))
 # prints feature on which model is trained
 print(model.get_booster().feature_names)
-# Print confusion matrix
+plt.figure()
 cm = confusion_matrix(y_test, pred)
-print(cm)
+plt.imshow(cm)
+plt.title("Confusion Matrix")
+plt.colorbar()
+plt.xticks([0, 1], ["Down", "Up"])
+plt.yticks([0, 1], ["Down", "Up"])
+for i in range(2):
+    for j in range(2):
+        plt.text(j, i, cm[i, j], ha="center", va="center")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+plt.savefig("CM_Xgb.png", dpi=300, bbox_inches="tight")
 
 # sample data
 sample_input = {
@@ -85,3 +72,15 @@ print("\nSample Prediction:")
 print(result)
 print("Training data: ",y_train.value_counts())
 print("Testing data: ",y_test.value_counts())
+
+# 5. Plot
+RocCurveDisplay.from_estimator(
+    estimator=model,   # your trained XGBoost model
+    X=X_test,          # test features
+    y=y_test,          # true labels
+    name="XGBoost",
+    plot_chance_level=True
+)
+plt.title("ROC Curve")
+#plt.show()
+plt.savefig("roc_curve.png", dpi=300, bbox_inches="tight")
