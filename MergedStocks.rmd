@@ -1,18 +1,94 @@
----
-title: "StocksPrices"
-author: "Joelle A."
-date: "`r Sys.Date()`"
-output: html_document
----
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-```{r}
+```{r load-and-split}
 data <- read_csv("Stock.csv")
-colnames(data)
-split(data, data$Company)
+
+# Name each company's data
+stock_list <- split(data, data$Company)
+list2env(stock_list, envir = .GlobalEnv)
 ```
 
+```{r summarize}
+# Quick summary table
+map_dfr(names(stock_list), function(nm) {
+  df <- stock_list[[nm]]
+  tibble(
+    Company     = nm,
+    Days        = nrow(df),
+    `Avg Close` = round(mean(df$Close, na.rm = TRUE), 2),
+    `Max High`  = round(max(df$High,  na.rm = TRUE), 2),
+    `Min Low`   = round(min(df$Low,   na.rm = TRUE), 2)
+  )
+})
+```
+
+```{r price, fig.width=10, fig.height=5}
+data |>
+  mutate(Date = as.Date(Date)) |>
+  ggplot(aes(x = Date, y = Close, colour = Company)) +
+  geom_line(linewidth = 0.6, alpha = 0.8) +
+  labs(title = "Closing Price Over Time",
+       x = NULL, y = "Close ($)", colour = NULL) +
+  theme_minimal()
+```
+
+```{r volume, fig.width=10, fig.height=5}
+data |>
+  mutate(Date = as.Date(Date),
+         Month = floor_date(Date, "month")) |>
+  group_by(Company, Month) |>
+  summarise(Avg_Volume = mean(Volume / 1e6, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(x = Month, y = Avg_Volume, fill = Company)) +
+  geom_col(position = "dodge", alpha = 0.8) +
+  labs(title = "Average Monthly Volume Traded",
+       x = NULL, y = "Avg Volume (millions)", fill = NULL) +
+  theme_minimal()
+```
+
+```{r boxplot, fig.width=10, fig.height=5}
+# Boxplot of closing price by company
+data |>
+  ggplot(aes(x = Company, y = Close, fill = Company)) +
+  geom_boxplot(alpha = 0.7, outlier.size = 0.8) +
+  labs(title = "Distribution of Closing Prices by Company",
+       x = NULL, y = "Close ($)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r distributions, fig.width=10, fig.height=5}
+# Density distribution of closing prices
+data |>
+  ggplot(aes(x = Close, fill = Company)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Closing Price Distributions",
+       x = "Close ($)", y = "Density", fill = NULL) +
+  theme_minimal()
+```
+
+```{r correlation-heatmap, fig.width=8, fig.height=6}
+# Correlation matrix per company (no extra packages needed)
+for (nm in names(stock_list)) {
+  cor_matrix <- stock_list[[nm]] |>
+    select(Open, High, Low, Close, Volume) |>
+    cor(use = "complete.obs")
+
+  melted <- as.data.frame(cor_matrix) |>
+    rownames_to_column("Var1") |>
+    pivot_longer(-Var1, names_to = "Var2", values_to = "value")
+
+  p <- ggplot(melted, aes(x = Var1, y = Var2, fill = value)) +
+    geom_tile(colour = "white") +
+    geom_text(aes(label = round(value, 2)), size = 3.5) +
+    scale_fill_gradient2(low = "#d73027", mid = "white", high = "#4575b4",
+                         midpoint = 0, limits = c(-1, 1)) +
+    labs(title = paste("Correlation Matrix —", nm),
+         x = NULL, y = NULL, fill = "r") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  print(p)
+}
+```
