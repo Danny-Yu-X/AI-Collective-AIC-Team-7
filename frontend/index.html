@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Trend Predictor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>Stock Trend Predictor</h1>
+
+        <select id="stock-symbol">
+            <option value="" disabled selected>Select a Stock</option>
+            <option value="AAPL">Apple (AAPL)</option>
+            <option value="AMZN">Amazon (AMZN)</option>
+            <option value="TSLA">Tesla (TSLA)</option>
+        </select>
+
+        <select id="time-horizon">
+            <option value="" disabled selected>Select Time Horizon</option>
+            <option value="days">1 Day</option>
+            <option value="weeks">1 Week</option>
+            <option value="months">1 Month</option>
+            <option value="years">1 Year</option>
+        </select>
+
+        <input type="number" id="open" placeholder="Open Price">
+        <input type="number" id="high" placeholder="High Price">
+        <input type="number" id="low" placeholder="Low Price">
+        <input type="number" id="close" placeholder="Close Price">
+        <input type="number" id="volume" placeholder="Volume">
+
+        <button onclick="predictStock()">
+            Predict
+        </button>
+
+        <div id="loading" class="hidden">
+            Analyzing stock data...
+        </div>
+
+        <div id="result" class="hidden">
+            <h2 id="prediction"></h2>
+            <p id="confidence"></p>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
