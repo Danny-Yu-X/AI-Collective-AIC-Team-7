@@ -1,0 +1,6 @@
+{
+  "name": "Stock Trend Predictor",
+  "description": "An interactive stock trend predictor utilizing simulated XGBoost features with beautiful visualizations, loading frames, and trend analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
