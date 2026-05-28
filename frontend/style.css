@@ -7,7 +7,7 @@
 
 body {
     font-family: Arial, sans-serif;
-    background: #111827;
+    background: #1b623e;
     color: white;
 
     display: flex;
@@ -20,7 +20,7 @@ body {
 .container {
     width: 350px;
     padding: 30px 20px;
-    background: #1f2937;
+    background: #63a575;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
